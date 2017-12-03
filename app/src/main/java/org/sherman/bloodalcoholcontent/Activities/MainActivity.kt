@@ -16,12 +16,12 @@ import android.widget.ListView
 import android.widget.Toast
 import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_main.*
-import org.sherman.bloodalcoholcontent.Data.DRAW
-import org.sherman.bloodalcoholcontent.Data.RETURN_DRINK_ACTIVITY
+import org.sherman.bloodalcoholcontent.Data.*
 import org.sherman.bloodalcoholcontent.Models.Drink
 import org.sherman.bloodalcoholcontent.Models.Profile
 import org.sherman.bloodalcoholcontent.Models.Status
 import org.sherman.bloodalcoholcontent.R
+import org.sherman.bloodalcoholcontent.R.id.time
 import java.time.*
 import java.time.temporal.TemporalAdjuster
 import java.time.temporal.TemporalAdjusters
@@ -64,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         //intent = intent
+        calcBAC()
         if (intent!!.extras != null){
             val asu:Double  = intent!!.extras.get("asu").toString().toDouble()
             val realm = Realm.getDefaultInstance()
@@ -121,10 +122,11 @@ class MainActivity : AppCompatActivity() {
                     realm.insertOrUpdate(status)
                 }
             }
-            Toast.makeText(this,"update Status with $asu", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(this,"update Status with $asu", Toast.LENGTH_SHORT).show()
         } else {
             //Load up the Status Record
             // TODO: This needs to have the rollover logic at some point
+            // TODO Change logic from screen based calcs to database
             var realm = Realm.getDefaultInstance()
             realm.executeTransaction {
                 val status = realm.where(Status::class.java).findFirst()
@@ -235,6 +237,29 @@ class MainActivity : AppCompatActivity() {
             }
         }
         onResume()
+    }
+    fun calcBAC() {
+        var cal: Long = Calendar.getInstance().timeInMillis
+        val yesterday:Long = cal - DAYINMILLI
+        var alcoholConsumption = 0.0
+        val realm = Realm.getDefaultInstance()
+        val query = realm.where(Profile::class.java).findFirst()
+        var GENDER_CONST = 0.68
+        if (query!!.male != 0){
+            GENDER_CONST = 0.55
+        }
+        val query2 = realm.where(Drink::class.java).greaterThan("time", yesterday).findAll()
+        for (q in query2){
+            alcoholConsumption += q.asu
+        }
+        alcoholConsumption = alcoholConsumption* GRAMS_OF_ALCOHOL
+        val adjustedWeight = query.weight* GRAMS_PER_POUND*GENDER_CONST
+        var bac = (((alcoholConsumption/adjustedWeight)*100) -(ELAPSED_TIME* ABSORPTION_RATE))
+        bac = (bac*1000).toInt().toDouble()/1000  // Round to 3 decimal places
+
+        // Update XML
+        bacTextView2Id.setText(bac.toString())
+
     }
 }
 
