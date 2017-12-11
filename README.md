@@ -9,5 +9,6 @@ Fun android app to track alcohol consumption over the week in ASU (American Stan
 - Minimal clicks for data entry (Helpful later in the evening)
 
 TODO:
-- BAC - Blood Alcohol Content/Level
+- Fix the rollover bug so that the numbers reset after a drinking session.
+- ~~BAC - Blood Alcohol Content/Level~~
 - Help
